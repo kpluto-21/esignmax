@@ -1,0 +1,76 @@
+body {
+    font-family: 'Segoe UI', sans-serif;
+    background: url("/static/img/tech_pattern.png") repeat;
+    background-size: 120px;
+    color: #333;
+    margin: 0;
+    padding: 0;
+}
+.container {
+    max-width: 700px;
+    margin: 60px auto;
+    padding: 30px;
+    background: #ffffffdd;
+    border-radius: 16px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    backdrop-filter: blur(6px);
+    text-align: center;
+    animation: fadeIn 0.6s ease-in-out;
+}
+h1, h2 {
+    color: #246bfd;
+    margin-bottom: 10px;
+}
+.btn, button {
+    display: inline-block;
+    padding: 12px 24px;
+    background: #246bfd;
+    color: #fff;
+    font-weight: 600;
+    border: none;
+    border-radius: 8px;
+    margin: 10px 5px;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}
+.btn:hover, button:hover {
+    background: #184bd8;
+}
+input[type="file"] {
+    margin-top: 20px;
+    width: 90%;
+    padding: 10px;
+}
+.result {
+    margin-top: 30px;
+    font-size: 20px;
+    font-weight: bold;
+    color: #246bfd;
+}
+img {
+    margin-top: 20px;
+    max-width: 300px;
+}
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(15px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+}
+
+th, td {
+  border: 1px solid #ccc; /* ini bikin garisnya muncul */
+  padding: 10px;
+  text-align: center;
+}
+table tr:nth-child(even) {
+  background-color: #f2f6ff;
+}
+th {
+  background-color: #246bfd;
+  color: white;
+}

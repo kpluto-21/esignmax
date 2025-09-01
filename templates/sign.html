@@ -1,0 +1,11 @@
+<html><head><title>Sign | eSignMAX</title><link rel="stylesheet" href="/static/css/style.css"></head>
+<body><div class="container"><h2>✍️ Tanda Tangan Dokumen</h2>
+<form method="POST" enctype="multipart/form-data">
+<input type="text" name="nama" placeholder="Nama Penandatangan" required>
+<input type="file" name="pdf" accept=".pdf" required><br><button type="submit">Generate Signature</button>
+</form>
+
+{% if message %}
+            <p style="color:green; font-weight:bold;">{{ message }}</p>
+        {% endif %}
+    </div></body></html>

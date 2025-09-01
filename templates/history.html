@@ -1,0 +1,16 @@
+<html><head><title>Riwayat | eSignMAX</title><link rel="stylesheet" href="/static/css/style.css"></head>
+<body><div class="container"><h2>🗂️ Riwayat Tanda Tangan</h2>
+<table border="1" style="width:100%; border-collapse: collapse; margin-top:20px;">
+<tr><th>No</th><th>Nama Penandatangan</th><th>Dokumen</th><th>Waktu</th><th>Status</th></tr>
+{% for entry in history %}
+<tr>
+  <td>{{ loop.index }}</td>
+  <td>{{ entry.nama }}</td>
+  <td><a href="{{ url_for('uploaded_file', filename=entry.filename) }}" target="_blank">{{ entry.filename }}</a></td>
+  <td>{{ entry.timestamp }}</td>
+  <td>{{ entry.status }}</td>
+</tr>
+{% endfor %}
+</table>
+<p><a href="/" class="btn">⬅️ Kembali</a></p>
+</div></body></html>
