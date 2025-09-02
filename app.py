@@ -151,7 +151,7 @@ def sign():
         json_str = json.dumps(data)
 
         timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
-        base_url = "http://127.0.0.1:5000/verify?doc_id="
+        base_url = f"https://esignmax-g63dcmo03-nisas-projects-d87116d1.vercel.app/verify?doc_id={doc_id}"
         qr_data = base_url + filename
         qr_file = f"{timestamp}_{filename.replace('.pdf','')}.png"
         qr_path = os.path.join(QR_FOLDER, qr_file)
