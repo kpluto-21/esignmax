@@ -163,9 +163,15 @@ def sign():
         status = "Valid"
         conn = sqlite3.connect(DB_NAME)
         c = conn.cursor()
-        c.execute("INSERT INTO riwayat_surat (nama, filename, timestamp, status, qr_file) VALUES (?, ?, ?, ?, ?)",
-                  (nama, "signed_" + filename, timestamp, status, qr_file))
+        c.execute("INSERT INTO riwayat_surat (nama, filename, timestamp, status) VALUES (?, ?, ?, ?)",
+          (nama, filename, timestamp, status))
         conn.commit()
+
+        # ambil ID terakhir
+        doc_id = c.lastrowid  
+
+        # bikin URL untuk QR
+        base_url = f"https://esignmax-g63dcmo03-nisas-projects-d87116d1.vercel.app/verify?doc_id={doc_id}"
         conn.close()
 
         # 🔹 Tempel QR ke PDF
@@ -183,11 +189,21 @@ def verify():
     if doc_id:
         conn = sqlite3.connect(DB_NAME)
         c = conn.cursor()
-        c.execute("SELECT nama, filename, timestamp, status FROM riwayat_surat WHERE filename=?", (doc_id,))
+        c.execute("SELECT nama, filename, timestamp, status FROM riwayat_surat WHERE id=?", (doc_id,))
         row = c.fetchone()
         conn.close()
 
         if row:
+            entry = {
+                "nama": row[0],
+            "filename": row[1],
+            "timestamp": row[2],
+            "status": row[3]
+        }
+        return render_template("verify.html", entry=entry)
+    else:
+        return "Dokumen tidak ditemukan", 404
+    
             nama, filename, timestamp, status = row
             if status == "Valid":
                 result = f"✅ Dokumen ASLI dan VALID.\nDitandatangani oleh: {nama}"
