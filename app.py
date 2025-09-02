@@ -20,7 +20,7 @@ for folder in [UPLOAD_FOLDER, QR_FOLDER, KEY_FOLDER, HISTORY_FOLDER]:
 def init_db():
     conn = sqlite3.connect(DB_NAME)
     c = conn.cursor()
-    c.execute('''
+    c.execute("""
         CREATE TABLE IF NOT EXISTS riwayat_surat (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             nama TEXT,
@@ -29,7 +29,7 @@ def init_db():
             status TEXT,
             qr_file TEXT
         )
-    ''')
+    """)
     conn.commit()
     conn.close()
 
@@ -129,6 +129,7 @@ def sign():
         nama = request.form.get("nama")
         pdf = request.files["pdf"]
         filename = pdf.filename
+
         filepath = os.path.join(UPLOAD_FOLDER, filename)
         pdf.save(filepath)
 
@@ -151,6 +152,8 @@ def sign():
         json_str = json.dumps(data)
 
         timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+        signed_name = "signed_" + filename
+        signed_path = os.path.join(UPLOAD_FOLDER, signed_name)
         base_url = f"https://esignmax-g63dcmo03-nisas-projects-d87116d1.vercel.app/verify?doc_id={doc_id}"
         qr_data = base_url + filename
         qr_file = f"{timestamp}_{filename.replace('.pdf','')}.png"
@@ -159,13 +162,17 @@ def sign():
 
         print(">>> [DEBUG] QR saved:", qr_path)
 
-         # 🔹 Simpan data ke database
         status = "Valid"
         conn = sqlite3.connect(DB_NAME)
         c = conn.cursor()
         c.execute("INSERT INTO riwayat_surat (nama, filename, timestamp, status) VALUES (?, ?, ?, ?)",
-          (nama, filename, timestamp, status))
+          (nama, signed_name, filename, timestamp, status))
         conn.commit()
+        doc_id = c.lastrowid
+        conn.close()
+
+        base_url = os.environ.get("BASE_URL") or request.host_url.rstrip("/")
+        verify_url = f"{base_url}/verify?doc_id={doc_id}"
 
         # ambil ID terakhir
         doc_id = c.lastrowid  
@@ -176,7 +183,7 @@ def sign():
 
         # 🔹 Tempel QR ke PDF
         signed_path = os.path.join(UPLOAD_FOLDER, "signed_" + filename)
-        embed_qr_to_pdf(filepath, qr_data, signed_path)
+        embed_qr_to_pdf(filepath, verify_url, signed_path)
         print(">>> [DEBUG] Selesai embed QR ke PDF")
 
         return render_template("signed.html", message=f"✅ Dokumen sudah ditandatangani: signed_{filename}", nama=nama)
@@ -184,9 +191,8 @@ def sign():
 
 @app.route("/verify", methods=["GET", "POST"])
 def verify():
-    result = None
     doc_id = request.args.get("doc_id")
-    if doc_id:
+    if request.method == "GET" and doc_id:
         conn = sqlite3.connect(DB_NAME)
         c = conn.cursor()
         c.execute("SELECT nama, filename, timestamp, status FROM riwayat_surat WHERE id=?", (doc_id,))
@@ -194,57 +200,16 @@ def verify():
         conn.close()
 
         if row:
+            nama, filename, timestamp, status = row
             entry = {
-                "nama": row[0],
-            "filename": row[1],
-            "timestamp": row[2],
-            "status": row[3]
+                "nama": nama,
+                "filename": filename,
+                "timestamp": timestamp,
+                "status": status
         }
-        return render_template("verify.html", entry=entry)
+        return render_template("verify.html", entry=entry, result=None)
     else:
         return "Dokumen tidak ditemukan", 404
-    
-            nama, filename, timestamp, status = row
-            if status == "Valid":
-                result = f"✅ Dokumen ASLI dan VALID.\nDitandatangani oleh: {nama}"
-            else:
-                result = f"❌ Dokumen ditemukan tapi statusnya {status}"
-        else:
-            result = "❌ Dokumen tidak ditemukan di database."
-
-        return render_template("verify.html", result=result)
-
-    # 🔹 Kalau user upload file manual (POST)
-    if request.method == "POST":
-        pdf = request.files["pdf"]
-        filename = pdf.filename
-        filepath = os.path.join(UPLOAD_FOLDER, "verify_" + filename)
-        pdf.save(filepath)
-
-        text = read_pdf_text(filepath)
-        hashed = hashlib.sha256(text.encode()).hexdigest()
-
-        found = False
-        conn = sqlite3.connect(DB_NAME)
-        c = conn.cursor()
-        c.execute("SELECT nama, filename, status FROM riwayat_surat")
-        rows = c.fetchall()
-        conn.close()
-
-        for row in rows:
-            nama, fname, status = row
-            if fname == "signed_" + filename:
-                found = True
-                if status == "Valid":
-                    result = f"✅ Dokumen ASLI dan VALID.\nDitandatangani oleh: {nama}"
-                else:
-                    result = "❌ Dokumen ditemukan tapi status tidak valid."
-                break
-
-        if not found:
-            result = "❌ Dokumen TIDAK VALID atau belum terdaftar."
-
-    return render_template("verify.html", result=result)
 
 @app.route("/history")
 def history():
@@ -257,20 +222,19 @@ def history():
     entries = []
     for row in rows:
         entries.append({
-            "nama": row[0],
-            "filename": row[1],
-            "timestamp": row[2],
-            "status": row[3]
+            "id" : row[0],
+            "nama": row[1],
+            "filename": row[2],
+            "timestamp": row[3],
+            "status": row[4]
         })
     return render_template("history.html", history=entries)
 
 @app.route("/uploads/<path:filename>")
 def uploaded_file(filename):
-    filename = filename.strip() #hapus spasi
+    filename = filename.strip()
     full_path = os.path.join(UPLOAD_FOLDER, filename)
-    print("DEBUG buka file:", full_path)  # cek path
     if not os.path.exists(full_path):
-        # coba-cari nama file yang mirip
         for f_upload in os.listdir(UPLOAD_FOLDER):
             if f_upload.lower() == filename.lower():
                 full_path = os.path.join(UPLOAD_FOLDER, f_upload)
@@ -280,11 +244,6 @@ def uploaded_file(filename):
 
 if __name__ == "__main__":
     app.run(debug=True)
-
-if __name__ == "__main__":
-    import os
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port, debug=True)
 
 if __name__ == "__main__":
     import os

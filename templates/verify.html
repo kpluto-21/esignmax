@@ -1,5 +1,17 @@
-<html><head><title>Verifikasi | eSignMAX</title><link rel="stylesheet" href="/static/css/style.css"></head>
-<body><div class="container"><h2>🛡️ Verifikasi Dokumen</h2>
 <form method="POST" enctype="multipart/form-data">
-<input type="file" name="pdf" accept=".pdf" required><br><button type="submit">Verifikasi</button>
-</form>{% if result %}<div class="result">{{ result }}</div>{% endif %}</div></body></html>
+  <input type="file" name="pdf" accept=".pdf">
+  <button type="submit">Verifikasi</button>
+</form>
+
+{% if entry %}
+  <div class="result">
+    <p><b>Nama:</b> {{ entry.nama }}</p>
+    <p><b>Dokumen:</b> <a href="{{ url_for('uploaded_file', filename=entry.filename) }}" target="_blank">{{ entry.filename }}</a></p>
+    <p><b>Waktu:</b> {{ entry.timestamp }}</p>
+    <p><b>Status:</b> {{ entry.status }}</p>
+  </div>
+{% endif %}
+
+{% if result %}
+  <div class="result">{{ result }}</div>
+{% endif %}
