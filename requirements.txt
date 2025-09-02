@@ -1,5 +1,5 @@
-Flask
-gunicorn
-ecdsa
-qrcode
-pillow
+Flask==3.0.2
+gunicorn==21.2.0
+ecdsa==0.18.0
+qrcode==7.4.2
+pillow==10.2.0
