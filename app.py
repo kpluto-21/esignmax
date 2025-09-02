@@ -1,12 +1,13 @@
 from flask import Flask, render_template, request, redirect, url_for, send_from_directory
-import os, qrcode, hashlib, base64, datetime, json
+import os, qrcode, hashlib, base64, datetime, sqlite3
 from ecdsa import SigningKey, VerifyingKey, NIST256p
-import io, qrcode, sqlite3
-from reportlab.lib.utils import ImageReader
 from PyPDF2 import PdfReader, PdfWriter
 from reportlab.pdfgen import canvas
+from reportlab.lib.utils import ImageReader
+import io
 
 app = Flask(__name__)
+
 UPLOAD_FOLDER = os.path.abspath("uploads")
 QR_FOLDER = "static/qr"
 KEY_FOLDER = "keys"
@@ -46,31 +47,22 @@ def read_pdf_text(filepath):
         return ""
 
 def embed_qr_to_pdf(input_pdf, qr_data, output_pdf):
-    import io, qrcode
-    from reportlab.lib.utils import ImageReader
-    from PyPDF2 import PdfReader, PdfWriter
-    from reportlab.pdfgen import canvas
-
-    # Generate QR ke memory
     qr_img = qrcode.make(qr_data)
     qr_io = io.BytesIO()
     qr_img.save(qr_io, format="PNG")
     qr_io.seek(0)
     qr_image = ImageReader(qr_io)
 
-    # Load PDF asli
     reader = PdfReader(input_pdf)
     writer = PdfWriter()
 
     for i, page in enumerate(reader.pages):
         packet = io.BytesIO()
 
-        # 🔑 ambil ukuran asli halaman
         width = float(page.mediabox.width)
         height = float(page.mediabox.height)
         c = canvas.Canvas(packet, pagesize=(width, height))
 
-        # Tempel QR hanya di halaman terakhir
         if i == len(reader.pages) - 1:
             c.drawImage(qr_image, width - 170, 50, width=120, height=120)
 
@@ -151,7 +143,6 @@ def sign():
         signature = sk.sign(hashed.encode())
         encoded_sig = base64.b64encode(signature).decode()
 
-        # ✨ simpan nama ke dalam QR
         data = {
             "nama": nama,
             "hash": hashed,
@@ -161,7 +152,7 @@ def sign():
 
         timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
         base_url = "http://127.0.0.1:5000/verify?doc_id="
-        qr_data = base_url + filename  # gunakan nama file sebagai doc_id
+        qr_data = base_url + filename
         qr_file = f"{timestamp}_{filename.replace('.pdf','')}.png"
         qr_path = os.path.join(QR_FOLDER, qr_file)
         qrcode.make(json_str).save(qr_path)
@@ -273,3 +264,8 @@ def uploaded_file(filename):
 
 if __name__ == "__main__":
     app.run(debug=True)
+
+if __name__ == "__main__":
+    import os
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port, debug=True)
